@@ -174,11 +174,11 @@ import lime.system.JNI;
 	 * @param purchase. The previously purchased product.
 	 *
 	 * Related Events (IAPEvent):
-	 * 		PURCHASE_CONSUME_SUCCESS: Fired when the consume attempt was successful
-	 * 		PURCHASE_CONSUME_FAILURE: Fired when the consume attempt failed
+	 * 		PURCHASE_ACKNOWLEDGE_SUCCESS: Fired when the acknowledgePurchase attempt was successful
+	 * 		PURCHASE_ACKNOWLEDGE_FAILURE: Fired when the acknowledgePurchase attempt failed
 	 */
 
-	 public static function acknowledgePurchase (purchase:Purchase):Void {
+	public static function acknowledgePurchase (purchase:Purchase):Void {
 
 		if (funcAcknowledgePurchase == null) {
 			funcAcknowledgePurchase = JNI.createStaticMethod ("org/haxe/extension/iap/InAppPurchase", "acknowledgePurchase", "(Ljava/lang/String;Ljava/lang/String;)V");

@@ -174,6 +174,21 @@ import haxe.Json;
 	}
 
 	/**
+	 * Sends a acknowledgePurchase intent for a given product.
+	 *
+	 * @param purchase. The previously purchased product.
+	 *
+	 * Related Events (IAPEvent):
+	 * 		PURCHASE_ACKNOWLEDGE_SUCCESS: Fired when the acknowledgePurchase attempt was successful
+	 * 		PURCHASE_ACKNOWLEDGE_FAILURE: Fired when the acknowledgePurchase attempt failed
+	 */
+
+	 public static function acknowledgePurchase (purchase:Purchase):Void {
+
+		//TODO
+	}
+
+	/**
 	 * Manually finishes a transaction from the SKPaymentQueue. If <code>manualTransactionMode</code> is false,
 	 * this method will no-op.
 	 *

@@ -379,7 +379,6 @@ private class IAPHandler {
 	public function onQueryInventoryComplete(response:String):Void {
 		
 		var dynResp:Dynamic = Json.parse(response);
-		trace("DANS INVENTORY onQueryInventoryComplete", dynResp);
 		IAP.inventory = new Inventory(dynResp);
 	}
 

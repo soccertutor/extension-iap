@@ -23,7 +23,7 @@ import java.util.Map;
 
 public class InAppPurchase extends Extension {
 	
-	private static String TAG = "BillingManager";
+	private static String TAG = "InAppPurchase";
 	private static HaxeObject callback = null;
 	private static BillingManager billingManager = null;
 	private static String publicKey = "";
@@ -126,7 +126,6 @@ public class InAppPurchase extends Extension {
 			}
 			jsonResp = jsonResp.substring(0, jsonResp.length() - 1);
 			jsonResp += "]}";
-			Log.d(TAG,"Inventory : " + jsonResp);
 			fireCallback("onQueryInventoryComplete", new Object[] { jsonResp });
 		}
 	}

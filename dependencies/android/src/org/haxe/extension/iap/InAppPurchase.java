@@ -29,6 +29,7 @@ public class InAppPurchase extends Extension {
 	private static String publicKey = "";
 	private static UpdateListener updateListener = null;
 	private static Map<String, Purchase> consumeInProgress = new HashMap<String, Purchase>();
+	private static Map<String, Purchase> acknowledgePurchaseInProgress = new HashMap<String, Purchase>();
 
 	private static class UpdateListener implements BillingUpdatesListener {
 		@Override
@@ -50,6 +51,18 @@ public class InAppPurchase extends Extension {
 				fireCallback("onConsume", new Object[] { purchase.getOriginalJson() });
 			} else {
 				fireCallback("onFailedConsume", new Object[] { ("{\"result\":" + result + ", \"product\":" + purchase.getOriginalJson() + "}") });
+			}
+		}
+
+		@Override
+		public void onAcknowledgePurchaseFinished(String token, final BillingResult result) {
+			Log.d(TAG, "Consumption finished. Purchase token: " + token + ", result: " + result);
+			final Purchase purchase = InAppPurchase.acknowledgePurchaseInProgress.get(token);
+			InAppPurchase.acknowledgePurchaseInProgress.remove(token);
+			if (result.getResponseCode() == BillingResponseCode.OK) {
+				fireCallback("onAcknowledgePurchase", new Object[] { purchase.getOriginalJson() });
+			} else {
+				fireCallback("onFailedAcknowledgePurchase", new Object[] { ("{\"result\":" + result + ", \"product\":" + purchase.getOriginalJson() + "}") });
 			}
 		}
 
@@ -113,6 +126,7 @@ public class InAppPurchase extends Extension {
 			}
 			jsonResp = jsonResp.substring(0, jsonResp.length() - 1);
 			jsonResp += "]}";
+			Log.d(TAG,"Inventory : " + jsonResp);
 			fireCallback("onQueryInventoryComplete", new Object[] { jsonResp });
 		}
 	}
@@ -140,6 +154,22 @@ public class InAppPurchase extends Extension {
 		catch(JSONException e)
 		{
 			fireCallback("onFailedConsume", new Object[] {});
+		}
+	}
+
+	public static void acknowledgePurchase (final String purchaseJson, final String signature)
+	{
+		try
+		{
+			final Purchase purchase = new Purchase(purchaseJson, signature);
+			if (!purchase.isAcknowledged()) {
+				InAppPurchase.acknowledgePurchaseInProgress.put(purchase.getPurchaseToken(), purchase);
+				InAppPurchase.billingManager.acknowledgePurchase(purchase.getPurchaseToken());
+			}
+		}
+		catch(JSONException e)
+		{
+			fireCallback("onFailedAcknowledgePurchase", new Object[] {});
 		}
 	}
 

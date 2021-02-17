@@ -20,6 +20,9 @@ package org.haxe.extension.iap.util;
 import android.app.Activity;
 import android.content.Context;
 import android.util.Log;
+
+import com.android.billingclient.api.AcknowledgePurchaseParams;
+import com.android.billingclient.api.AcknowledgePurchaseResponseListener;
 import com.android.billingclient.api.BillingClient;
 import com.android.billingclient.api.BillingClient.FeatureType;
 import com.android.billingclient.api.BillingClient.SkuType;
@@ -70,6 +73,7 @@ public class BillingManager implements PurchasesUpdatedListener {
     private final List<Purchase> mPurchases = new ArrayList<>();
 
     private Set<String> mTokensToBeConsumed;
+    private Set<String> mTokensToBeAcknowledged;
 
     private int mBillingClientResponseCode = BILLING_MANAGER_NOT_INITIALIZED;
 
@@ -96,6 +100,7 @@ public class BillingManager implements PurchasesUpdatedListener {
         void onBillingClientSetupFinished(final Boolean success);
         void onQueryPurchasesFinished(List<Purchase> purchases);
         void onConsumeFinished(String token, BillingResult result);
+        void onAcknowledgePurchaseFinished(String token, BillingResult result);
         void onPurchasesUpdated(List<Purchase> purchases, BillingResult result);
         void onQuerySkuDetailsFinished(List<SkuDetails> skuDetailsList, BillingResult result);
     }
@@ -149,7 +154,7 @@ public class BillingManager implements PurchasesUpdatedListener {
             }
         };
 
-        Runnable onError = new Runnable() {
+         Runnable onError = new Runnable() {
             @Override
             public void run() {
                 mBillingUpdatesListener.onPurchasesUpdated(null, errorResult);
@@ -257,6 +262,54 @@ public class BillingManager implements PurchasesUpdatedListener {
         };
 
         executeServiceRequest(consumeRequest, onError);
+    }
+
+    public void acknowledgePurchase(final String purchaseToken) {
+        // If we've already scheduled to consume this token - no action is needed (this could happen
+        // if you received the token when querying purchases inside onReceive() and later from
+        // onActivityResult()
+        if (mTokensToBeAcknowledged == null) {
+            mTokensToBeAcknowledged = new HashSet<>();
+        } else if (mTokensToBeAcknowledged.contains(purchaseToken)) {
+            Log.i(TAG, "Token was already scheduled to be consumed - skipping...");
+            return;
+        }
+        mTokensToBeAcknowledged.add(purchaseToken);
+
+        final AcknowledgePurchaseParams acknowledgePurchaseParams =
+                AcknowledgePurchaseParams.newBuilder()
+                        .setPurchaseToken(purchaseToken)
+                        .build();
+
+        // Generating Consume Response listener
+        final AcknowledgePurchaseResponseListener acknowledgePurchaseResponseListener = new AcknowledgePurchaseResponseListener() {
+            @Override
+            public void onAcknowledgePurchaseResponse(BillingResult billingResult) {
+                // If billing service was disconnected, we try to reconnect 1 time
+                // (feel free to introduce your retry policy here).
+                mTokensToBeAcknowledged.remove(purchaseToken);
+                mBillingUpdatesListener.onAcknowledgePurchaseFinished(purchaseToken, billingResult);
+            }
+        };
+
+        // Creating a runnable from the request to use it inside our connection retry policy below
+        Runnable acknowledgeRequest = new Runnable() {
+            @Override
+            public void run() {
+                // Consume the purchase async
+                Log.i(TAG, "Consuming:" + purchaseToken);
+                mBillingClient.acknowledgePurchase(acknowledgePurchaseParams, acknowledgePurchaseResponseListener);
+            }
+        };
+
+        Runnable onError = new Runnable() {
+            @Override
+            public void run() {
+                mBillingUpdatesListener.onAcknowledgePurchaseFinished(null, errorResult);
+            }
+        };
+
+        executeServiceRequest(acknowledgeRequest, onError);
     }
 
     /**

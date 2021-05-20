@@ -144,22 +144,28 @@ public class BillingManager implements PurchasesUpdatedListener {
      * Start a purchase or subscription replace flow
      */
     public void initiatePurchaseFlow(final String skuId) {
+        final SkuDetails skuDetail = mSkuDetailsMap.get(skuId);
+        if(skuDetail == null)
+            return;
+
         Runnable purchaseFlowRequest = new Runnable() {
             @Override
             public void run() {
                 Log.d(TAG, "Launching in-app purchase flow.");
-                BillingFlowParams purchaseParams = BillingFlowParams.newBuilder()
-                        .setSkuDetails(mSkuDetailsMap.get(skuId)).build();
-                mBillingClient.launchBillingFlow(mActivity, purchaseParams);
+                if(skuDetail != null) {
+                    BillingFlowParams purchaseParams = BillingFlowParams.newBuilder()
+                            .setSkuDetails(skuDetail).build();
+                    mBillingClient.launchBillingFlow(mActivity, purchaseParams);
+                }
             }
         };
 
-         Runnable onError = new Runnable() {
+        Runnable onError = new Runnable() {
             @Override
             public void run() {
-                mBillingUpdatesListener.onPurchasesUpdated(null, errorResult);
-            };
+            mBillingUpdatesListener.onPurchasesUpdated(null, errorResult);
         };
+    };
 
         executeServiceRequest(purchaseFlowRequest, onError);
     }

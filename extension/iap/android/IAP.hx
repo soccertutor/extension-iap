@@ -168,6 +168,25 @@ import lime.system.JNI;
 
 	}
 
+	/**
+	 * Sends a acknowledgePurchase intent for a given product.
+	 *
+	 * @param purchase. The previously purchased product.
+	 *
+	 * Related Events (IAPEvent):
+	 * 		PURCHASE_ACKNOWLEDGE_SUCCESS: Fired when the acknowledgePurchase attempt was successful
+	 * 		PURCHASE_ACKNOWLEDGE_FAILURE: Fired when the acknowledgePurchase attempt failed
+	 */
+
+	public static function acknowledgePurchase (purchase:Purchase):Void {
+
+		if (funcAcknowledgePurchase == null) {
+			funcAcknowledgePurchase = JNI.createStaticMethod ("org/haxe/extension/iap/InAppPurchase", "acknowledgePurchase", "(Ljava/lang/String;Ljava/lang/String;)V");
+		}
+		funcAcknowledgePurchase (purchase.originalJson, purchase.signature);
+
+	}
+
 	public static function queryInventory (queryItemDetails:Bool = false, moreItems:Array<String> = null):Void {}
 
 	// Getter & Setter Methods
@@ -225,6 +244,7 @@ import lime.system.JNI;
 	private static var funcInit:Dynamic;
 	private static var funcBuy:Dynamic;
 	private static var funcConsume:Dynamic;
+	private static var funcAcknowledgePurchase:Dynamic;
 	private static var funcRestore:Dynamic;
 	private static var funcQueryInventory:Dynamic;
 	private static var funcQuerySkuDetails:Dynamic;
@@ -269,6 +289,29 @@ private class IAPHandler {
 
 		var dynResp:Dynamic = Json.parse(response);
 		var evt:IAPEvent = new IAPEvent (IAPEvent.PURCHASE_CONSUME_SUCCESS);
+		evt.productID = Reflect.field(dynResp, "productId");		
+		IAP.dispatchEvent(evt);
+	}
+
+	///////////////////////////////////////////////////////////////////////////////////////////
+	///////////////////////////////////////////////////////////////////////////////////////////
+
+	public function onFailedAcknowledgePurchase (response:String):Void {
+		var dynResp:Dynamic = Json.parse(response);
+		var evt:IAPEvent = new IAPEvent (IAPEvent.PURCHASE_ACKNOWLEDGE_FAILURE);
+		evt.productID = Reflect.field(Reflect.field(dynResp, "product"), "productId");
+		evt.message = Reflect.field(Reflect.field(dynResp, "result"), "message");
+		IAP.dispatchEvent (evt);
+	}
+
+	///////////////////////////////////////////////////////////////////////////////////////////
+	///////////////////////////////////////////////////////////////////////////////////////////
+
+	public function onAcknowledgePurchase (response:String):Void {
+		trace('onAcknowledgePurchase: $response');
+
+		var dynResp:Dynamic = Json.parse(response);
+		var evt:IAPEvent = new IAPEvent (IAPEvent.PURCHASE_ACKNOWLEDGE_SUCCESS);
 		evt.productID = Reflect.field(dynResp, "productId");		
 		IAP.dispatchEvent(evt);
 	}
@@ -334,7 +377,7 @@ private class IAPHandler {
 	}
 
 	public function onQueryInventoryComplete(response:String):Void {
-
+		
 		var dynResp:Dynamic = Json.parse(response);
 		IAP.inventory = new Inventory(dynResp);
 	}

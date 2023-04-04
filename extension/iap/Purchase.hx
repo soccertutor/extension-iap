@@ -22,6 +22,7 @@ class Purchase
 	// iOS Properties
 	public var transactionID(default, null):String;
 	public var transactionDate(default, null):Int;
+	public var receipt(default, null):String;
 
 	// Blackberry Properties
 	public var date : String;
@@ -67,6 +68,7 @@ class Purchase
 		
 		transactionID = Reflect.field(dynObj, "transactionID");
 		transactionDate = Reflect.field(dynObj, "transactionDate");
+		receipt = Reflect.field(dynObj, "receipt");
 		
 		this.originalJson = originalJson;
 	}

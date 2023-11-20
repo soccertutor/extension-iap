@@ -1,9 +1,9 @@
 package extension.iap.android;
 
 import extension.iap.IAP;
+import extension.iap.EventDispatcher;
 import flash.errors.Error;
 import flash.events.Event;
-import flash.events.EventDispatcher;
 import flash.Lib;
 import haxe.Json;
 
@@ -60,11 +60,10 @@ import lime.system.JNI;
 	public static var manualTransactionMode (get, set):Bool;
 	public static var inventory(default, null):Inventory = null;
 	private static var initialized = false;
-	private static var tempProductsData:Array<IAProduct> = [];
 
 	// Event dispatcher composition
 	private static var dispatcher = new EventDispatcher ();
-	private static var cleanupJobs:Array<Void -> Void> = [];
+	private static var iapHandler:IAPHandler = new IAPHandler();
 
 	/**
 	 * Initializes the extension.
@@ -81,30 +80,17 @@ import lime.system.JNI;
 
 	public static function initialize (publicKey:String = ""):Void {
 
-		if (initialized)
-		{
-			trace("IAP: already initialized - cleanup it");
-			return;
-		}
-
-		if (funcInit == null) {
-			funcInit = JNI.createStaticMethod ("org/haxe/extension/iap/InAppPurchase", "initialize", "(Ljava/lang/String;Lorg/haxe/lime/HaxeObject;)V");
-		}
-
 		inventory = new Inventory(null);
-		funcInit (publicKey, new IAPHandler ());
+		funcInit (publicKey, iapHandler);
 
 		initialized = true;
 	}
 
-	public static function cleanup ():Void {
-		inventory = null;		
-		for (job in cleanupJobs)
-		{
-			job();
-		}
-		cleanupJobs = [];
+	public static function cleanup():Void {
+		inventory = null;
 		initialized = false;
+		dispatcher.removeAllListeners();
+		funcCleanup();
 	}
 
 	/**
@@ -121,15 +107,9 @@ import lime.system.JNI;
 	 * 		PURCHASE_CANCEL: Fired when the purchase attempt was cancelled by the user
 	 */
 
-	public static function purchase (productID:String, devPayload:String = ""):Void {
-
-		if (funcBuy == null) {
-			funcBuy = JNI.createStaticMethod ("org/haxe/extension/iap/InAppPurchase", "buy", "(Ljava/lang/String;Ljava/lang/String;)V");
-		}
-
-		funcBuy (productID, devPayload);
+	public static function purchase(productID:String, devPayload:String = ""):Void {
+		funcBuy(productID, devPayload);
 	}
-
 
 	/**
 	 * Retrieves localized information about a list of products.
@@ -142,10 +122,7 @@ import lime.system.JNI;
 	 * 			This method also populates the productDetailsMap property of the inventory, so it can be accessed anytime after calling it.
 	 */
 	
-	public static function requestProductData (ids:Array<String>):Void {
-		if (funcQuerySkuDetails == null) {
-			funcQuerySkuDetails = JNI.createStaticMethod ("org/haxe/extension/iap/InAppPurchase", "querySkuDetails", "([Ljava/lang/String;)V");
-		}
+	public static function requestProductData(ids:Array<String>):Void {
 		funcQuerySkuDetails(ids);
 	}
 
@@ -159,15 +136,10 @@ import lime.system.JNI;
 	 * 		PURCHASE_CONSUME_FAILURE: Fired when the consume attempt failed
 	 */
 
-	public static function consume (purchase:Purchase):Void {
-
-		if (funcConsume == null) {
-			funcConsume = JNI.createStaticMethod ("org/haxe/extension/iap/InAppPurchase", "consume", "(Ljava/lang/String;Ljava/lang/String;)V");
-		}
-		funcConsume (purchase.originalJson, purchase.signature);
-
+	public static function consume(purchase:Purchase):Void {
+		funcConsume(purchase.originalJson, purchase.signature);
 	}
-
+	
 	/**
 	 * Sends a acknowledgePurchase intent for a given product.
 	 *
@@ -179,15 +151,12 @@ import lime.system.JNI;
 	 */
 
 	public static function acknowledgePurchase (purchase:Purchase):Void {
-
-		if (funcAcknowledgePurchase == null) {
-			funcAcknowledgePurchase = JNI.createStaticMethod ("org/haxe/extension/iap/InAppPurchase", "acknowledgePurchase", "(Ljava/lang/String;Ljava/lang/String;)V");
-		}
 		funcAcknowledgePurchase (purchase.originalJson, purchase.signature);
-
 	}
 
-	public static function queryInventory (queryItemDetails:Bool = false, moreItems:Array<String> = null):Void {}
+	public static function queryInventory ():Void {
+		funcQueryInventory();
+	}
 
 	// Getter & Setter Methods
 
@@ -212,44 +181,30 @@ import lime.system.JNI;
 
 	// Event Dispatcher composition methods
 
-	public static function addEventListener (type:String, listener:Dynamic, useCapture:Bool = false, priority:Int = 0, useWeakReference:Bool = false):Void {
+	public static function addEventListener (type:String, listener:IAPEvent->Void):Void {
 
-		dispatcher.addEventListener (type, listener, useCapture, priority, useWeakReference);
-		cleanupJobs.push(dispatcher.removeEventListener.bind(type, listener, useCapture));
+		dispatcher.setListener(type, listener);
 	}
 
-	public static function removeEventListener (type:String, listener:Dynamic, capture:Bool = false):Void {
+	public static function removeEventListener (type:String):Void {
 
-		dispatcher.removeEventListener (type, listener, capture);
-
-	}
-
-	public static function dispatchEvent (event:Event):Bool {
-		// fix for runinig callback from extension in proper gui thread
-		haxe.Timer.delay(function() {
-			dispatcher.dispatchEvent (event);
-		}, 0);
-
-		return true;
-	}
-
-	public static function hasEventListener (type:String):Bool {
-
-		return dispatcher.hasEventListener (type);
+		dispatcher.removeListener(type);
 
 	}
 
+	public static function dispatchEvent (event:IAPEvent):Void {
+		dispatcher.dispatchEvent (event);
+	}
+	
 
 	// Native Methods
-	private static var funcInit:Dynamic;
-	private static var funcBuy:Dynamic;
-	private static var funcConsume:Dynamic;
-	private static var funcAcknowledgePurchase:Dynamic;
-	private static var funcRestore:Dynamic;
-	private static var funcQueryInventory:Dynamic;
-	private static var funcQuerySkuDetails:Dynamic;
-	private static var funcTest:Dynamic;
-
+	static var funcInit = JNI.createStaticMethod("org/haxe/extension/iap/InAppPurchase", "initialize", "(Ljava/lang/String;Lorg/haxe/lime/HaxeObject;)V");
+	static var funcBuy = JNI.createStaticMethod ("org/haxe/extension/iap/InAppPurchase", "buy", "(Ljava/lang/String;Ljava/lang/String;)V");
+	static var funcQuerySkuDetails = JNI.createStaticMethod ("org/haxe/extension/iap/InAppPurchase", "querySkuDetails", "([Ljava/lang/String;)V");
+	static var funcConsume = JNI.createStaticMethod ("org/haxe/extension/iap/InAppPurchase", "consume", "(Ljava/lang/String;Ljava/lang/String;)V");
+	static var funcAcknowledgePurchase = JNI.createStaticMethod ("org/haxe/extension/iap/InAppPurchase", "acknowledgePurchase", "(Ljava/lang/String;Ljava/lang/String;)V");
+	static var funcQueryInventory = JNI.createStaticMethod("org/haxe/extension/iap/InAppPurchase", "queryInventory", "()V");
+	static var funcCleanup = JNI.createStaticMethod("org/haxe/extension/iap/InAppPurchase", "cleanup", "()V");
 }
 
 
@@ -267,17 +222,26 @@ private class IAPHandler {
 	///////////////////////////////////////////////////////////////////////////////////////////
 
 	public function onCanceledPurchase (message:String):Void {
-		IAP.dispatcher.dispatchEvent (new IAPEvent (IAPEvent.PURCHASE_CANCEL));
+		IAP.dispatchEvent (new IAPEvent (IAPEvent.PURCHASE_CANCEL));
 	}
 
 	///////////////////////////////////////////////////////////////////////////////////////////
 	///////////////////////////////////////////////////////////////////////////////////////////
 
 	public function onFailedConsume (response:String):Void {
-		var dynResp:Dynamic = Json.parse(response);
 		var evt:IAPEvent = new IAPEvent (IAPEvent.PURCHASE_CONSUME_FAILURE);
-		evt.productID = Reflect.field(Reflect.field(dynResp, "product"), "productId");
-		evt.message = Reflect.field(Reflect.field(dynResp, "result"), "message");
+		
+		try {
+			var dynResp:Dynamic = Json.parse(response);
+			evt.productID = Reflect.field(Reflect.field(dynResp, "product"), "productId");
+			evt.message = Reflect.field(Reflect.field(dynResp, "result"), "message");
+		}
+		catch (e:Dynamic)
+		{
+			evt.productID = "";
+			evt.message = "Caught JSONException while trying to consume product";
+		}
+		
 		IAP.dispatchEvent (evt);
 	}
 
@@ -292,15 +256,24 @@ private class IAPHandler {
 		evt.productID = Reflect.field(dynResp, "productId");		
 		IAP.dispatchEvent(evt);
 	}
-
+	
 	///////////////////////////////////////////////////////////////////////////////////////////
 	///////////////////////////////////////////////////////////////////////////////////////////
 
 	public function onFailedAcknowledgePurchase (response:String):Void {
-		var dynResp:Dynamic = Json.parse(response);
 		var evt:IAPEvent = new IAPEvent (IAPEvent.PURCHASE_ACKNOWLEDGE_FAILURE);
-		evt.productID = Reflect.field(Reflect.field(dynResp, "product"), "productId");
-		evt.message = Reflect.field(Reflect.field(dynResp, "result"), "message");
+		
+		try {
+			var dynResp:Dynamic = Json.parse(response);
+			evt.productID = Reflect.field(Reflect.field(dynResp, "product"), "productId");
+			evt.message = Reflect.field(Reflect.field(dynResp, "result"), "message");
+		}
+		catch (e:Dynamic)
+		{
+			evt.productID = "";
+			evt.message = "Caught JSONException while trying to acknowledge purchase";
+		}
+		
 		IAP.dispatchEvent (evt);
 	}
 
@@ -330,14 +303,25 @@ private class IAPHandler {
 	///////////////////////////////////////////////////////////////////////////////////////////
 	///////////////////////////////////////////////////////////////////////////////////////////
 
-	public function onPurchase (response:String, itemType:String, signature:String):Void {
-		var evt:IAPEvent = new IAPEvent (IAPEvent.PURCHASE_SUCCESS);
+	public function onPurchase(response:String, itemType:String, signature:String):Void {
+		var evt:IAPEvent = new IAPEvent(IAPEvent.PURCHASE_SUCCESS);
 
-		evt.purchase = new Purchase(response, itemType, signature);
+		evt.purchase = new Purchase(response, itemType, signature, Purchase.PURCHASE_STATE_PURCHASED);
 		evt.productID = evt.purchase.productID;
-		IAP.inventory.purchaseMap.set(evt.purchase.productID, evt.purchase);
+		IAP.inventory.addPurchase(evt.purchase);
+		IAP.dispatchEvent(evt);
+	}
+	
+	///////////////////////////////////////////////////////////////////////////////////////////
+	///////////////////////////////////////////////////////////////////////////////////////////
 
-		IAP.dispatchEvent (evt);
+	public function onPending(response:String, itemType:String, signature:String):Void {
+		var evt:IAPEvent = new IAPEvent(IAPEvent.PURCHASE_PENDING);
+
+		evt.purchase = new Purchase(response, itemType, signature, Purchase.PURCHASE_STATE_PENDING);
+		evt.productID = evt.purchase.productID;
+		IAP.inventory.addPending(evt.purchase);
+		IAP.dispatchEvent(evt);
 	}
 
 	///////////////////////////////////////////////////////////////////////////////////////////
@@ -360,12 +344,16 @@ private class IAPHandler {
 
 			if (dynDescriptions != null) {
 				for (dynItm in dynDescriptions) {
+					
 					prod = { productID: Reflect.field(dynItm, "productId") };
 					prod.type = Reflect.field(dynItm, "type");
-					prod.localizedPrice = Reflect.field(dynItm, "price");
-					prod.priceAmountMicros = Reflect.field(dynItm, "price_amount_micros");
+
+					var oneTimePurchaseOfferDetails:Dynamic = Reflect.field(dynItm, "oneTimePurchaseOfferDetails");
+					prod.localizedPrice = Reflect.field(oneTimePurchaseOfferDetails, "formattedPrice");
+					prod.priceAmountMicros = Reflect.field(oneTimePurchaseOfferDetails, "priceAmountMicros");
+					prod.priceCurrencyCode = Reflect.field(oneTimePurchaseOfferDetails, "priceCurrencyCode");
+					
 					prod.price = prod.priceAmountMicros / 1000 / 1000;
-					prod.priceCurrencyCode = Reflect.field(dynItm, "price_currency_code");
 					prod.localizedTitle = Reflect.field(dynItm, "title");
 					prod.localizedDescription = Reflect.field(dynItm, "description");
 					evt.productsData.push(prod);
@@ -377,9 +365,18 @@ private class IAPHandler {
 	}
 
 	public function onQueryInventoryComplete(response:String):Void {
-		
+		trace('onQueryInventoryComplete');
+
 		var dynResp:Dynamic = Json.parse(response);
 		IAP.inventory = new Inventory(dynResp);
+		IAP.dispatchEvent (new IAPEvent (IAPEvent.PURCHASE_QUERY_INVENTORY_SUCCESS));
+	}
+	
+	public function onQueryInventoryFailed(response:String):Void {
+		trace('onQueryInventoryFailed');
+
+		IAP.inventory = new Inventory(null);
+		IAP.dispatchEvent (new IAPEvent (IAPEvent.PURCHASE_QUERY_INVENTORY_FAILURE));
 	}
 
 	///////////////////////////////////////////////////////////////////////////////////////////
@@ -394,6 +391,11 @@ private class IAPHandler {
 		}
 	}
 
+	public function log(message:String):Void {
+		var event:IAPEvent = new IAPEvent (IAPEvent.LOG);
+		event.message = message;
+		IAP.dispatchEvent(event);
+	}
 	///////////////////////////////////////////////////////////////////////////////////////////
 	///////////////////////////////////////////////////////////////////////////////////////////
 

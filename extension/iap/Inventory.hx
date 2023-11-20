@@ -8,13 +8,17 @@ package extension.iap;
 class Inventory
 {
 
-	public var productDetailsMap(default, null): Map<String, ProductDetails>;
-	public var purchaseMap(default, null): Map<String, Purchase>;
+	public var productDetailsMap(default, null):Map<String, ProductDetails>;
+	
+	public var purchaseMap(default, null):Map<String, Purchase>;
+	public var pendingMap(default, null):Map<String, Purchase>;
 	
 	public function new(?dynObj:Dynamic) 
 	{
 		productDetailsMap = new Map();
+		
 		purchaseMap = new Map();
+		pendingMap = new Map();
 		
 		if (dynObj != null) {
 			
@@ -31,14 +35,25 @@ class Inventory
 			if (dynPurchases != null) {
 				
 				for (dynItm in dynPurchases) {
-					var p = new Purchase(Reflect.field(dynItm, "value"), Reflect.field(dynItm, "itemType"), Reflect.field(dynItm, "signature"));
-					purchaseMap.set(cast Reflect.field(dynItm, "key"), p);
+					var purchaseState:Null<Int> = Purchase.PURCHASE_STATE_PURCHASED;
+					
+				#if android
+					purchaseState = Reflect.field(dynItm, "purchaseState");
+				#end
+					
+					var p = new Purchase(Reflect.field(dynItm, "value"), Reflect.field(dynItm, "itemType"), Reflect.field(dynItm, "signature"), purchaseState);
+					
+					if (p.purchaseState == Purchase.PURCHASE_STATE_PURCHASED)
+					{
+						addPurchase(p);
+					}
+					else if (p.purchaseState == Purchase.PURCHASE_STATE_PENDING)
+					{
+						addPending(p);
+					}
 				}
-				
 			}
-			
 		}
-
 	}
 	
 	/** Returns the listing details for an in-app product. */
@@ -69,9 +84,25 @@ class Inventory
      * purchase data from the Inventory you already have is quicker than querying for
      * a new Inventory.
      */
-    public function erasePurchase(productId:String) :Void {
-		
-        if (purchaseMap.exists(productId)) purchaseMap.remove(productId);
+    public function erasePurchase(productId:String):Void {
+		if (purchaseMap.exists(productId)) {
+			purchaseMap.remove(productId);
+		}
     }
+	
+	public function addPurchase(purchase:Purchase):Void {
+		purchaseMap.set(purchase.productID, purchase);
+		erasePending(purchase.productID);
+	}
+	
+	public function addPending(purchase:Purchase):Void {
+		pendingMap.set(purchase.productID, purchase);
+	}
+	
+	public function erasePending(productId:String):Void {
+		if (pendingMap.exists(productId)) {
+			pendingMap.remove(productId);
+		}
+	}
 	
 }

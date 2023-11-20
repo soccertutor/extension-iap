@@ -15,9 +15,13 @@ class IAPEvent extends Event {
 	public static inline var PURCHASE_SUCCESS = "purchaseSuccess";
 	public static inline var PURCHASE_FAILURE = "purchaseFailed";
 	public static inline var PURCHASE_CANCEL = "purchaseCanceled";
+	public static inline var PURCHASE_PENDING = "purchasePending";
 	public static inline var PURCHASE_CONSUME_SUCCESS = "consumeSuccess";
 	public static inline var PURCHASE_CONSUME_FAILURE = "consumeFailed";
-
+	
+	public static inline var PURCHASE_QUERY_INVENTORY_SUCCESS = "queryInventorySuccess";
+	public static inline var PURCHASE_QUERY_INVENTORY_FAILURE = "queryInventoryFailed";
+	
 	public static inline var PURCHASE_ACKNOWLEDGE_SUCCESS = "acknowledgeSuccess";
 	public static inline var PURCHASE_ACKNOWLEDGE_FAILURE = "acknowledgeFailed";
 	public static inline var PURCHASE_PRODUCT_DATA_COMPLETE = "productDataComplete";
@@ -25,6 +29,7 @@ class IAPEvent extends Event {
 	public static inline var DOWNLOAD_COMPLETE = "downloadComplete";
 	public static inline var DOWNLOAD_START = "downloadStart";
 	public static inline var DOWNLOAD_PROGRESS = "downloadProgress";
+	public static inline var LOG = "log";
 	
 	public var productID:String;
 	public var productsData:Array<IAProduct>;

@@ -191,7 +191,7 @@ import haxe.Json;
 
 	}
 
-	public static function removeEventListener (type:String, listener:Dynamic, capture:Bool = false):Void {
+	public static function removeEventListener (type:String, listener:Dynamic = null, capture:Bool = false):Void {
 
 		dispatcher.removeEventListener (type, listener, capture);
 
@@ -209,4 +209,7 @@ import haxe.Json;
 
 	}
 
+	public static function cleanup():Void {
+		// nothing
+	}
 }

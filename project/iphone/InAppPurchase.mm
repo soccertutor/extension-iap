@@ -163,7 +163,7 @@ void sendPurchaseProductDataEventWrap(const char* type, NSString* productID, NSS
 
 			NSString *priceCurrencyCode = [prod.priceLocale objectForKey:NSLocaleCurrencyCode];
 
-			int priceAmountMicros = [[prod.price decimalNumberByMultiplyingBy:[NSDecimalNumber decimalNumberWithString:@"100"]] intValue];
+			int priceAmountMicros = [[prod.price decimalNumberByMultiplyingBy:[NSDecimalNumber decimalNumberWithString:@"1000000"]] intValue];
 
 			sendPurchaseProductDataEventWrap("productData", prod.productIdentifier, prod.localizedTitle, prod.localizedDescription, priceAmountMicros, formattedPrice, priceCurrencyCode);
 
@@ -207,10 +207,12 @@ void sendPurchaseProductDataEventWrap(const char* type, NSString* productID, NSS
 {
     if(wasSuccessful)
     {
-    	NSLog(@"Successful Purchase");
+	if (!inited)
+	{
 		[[SKPaymentQueue defaultQueue] finishTransaction:transaction];
+	}
 
-    	
+    	NSLog(@"Successful Purchase");
         NSString* receiptString = [[NSString alloc] initWithString:transaction.payment.productIdentifier];
         
         NSURL *receiptURL = [[NSBundle mainBundle] appStoreReceiptURL];
@@ -223,8 +225,7 @@ void sendPurchaseProductDataEventWrap(const char* type, NSString* productID, NSS
     else
     {
     	NSLog(@"Failed Purchase");
-		[[SKPaymentQueue defaultQueue] finishTransaction:transaction];
-		
+	[[SKPaymentQueue defaultQueue] finishTransaction:transaction];
         if (transaction.error.code != SKErrorPaymentCancelled)
         {
             NSLog(@"Transaction error: %@", transaction.error.localizedDescription);

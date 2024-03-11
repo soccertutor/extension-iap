@@ -127,6 +127,20 @@ import lime.system.JNI;
 	}
 
 	/**
+	 * Retrieves localized information about a list of subscriptions.
+	 * 
+	 * @param inArg. A String with the product Id, or an Array of Strings with multiple product Ids.
+	 * 
+	 * Related Events (IAPEvent): 
+	 * 		PURCHASE_PRODUCT_DATA_COMPLETE: Fired when the products data has been retrieved. 
+	 * 			The event will come with a productsData array.
+	 * 			This method also populates the productDetailsMap property of the inventory, so it can be accessed anytime after calling it.
+	 */
+	
+	 public static function requestSubscriptionProductData(ids:Array<String>):Void {
+		funcQuerySkuDetailsSubscription(ids);
+	}
+	/**
 	 * Sends a consume intent for a given product.
 	 *
 	 * @param purchase. The previously purchased product.
@@ -201,6 +215,7 @@ import lime.system.JNI;
 	static var funcInit = JNI.createStaticMethod("org/haxe/extension/iap/InAppPurchase", "initialize", "(Ljava/lang/String;Lorg/haxe/lime/HaxeObject;)V");
 	static var funcBuy = JNI.createStaticMethod ("org/haxe/extension/iap/InAppPurchase", "buy", "(Ljava/lang/String;Ljava/lang/String;)V");
 	static var funcQuerySkuDetails = JNI.createStaticMethod ("org/haxe/extension/iap/InAppPurchase", "querySkuDetails", "([Ljava/lang/String;)V");
+	static var funcQuerySkuDetailsSubscription = JNI.createStaticMethod ("org/haxe/extension/iap/InAppPurchase", "querySkuDetailsSubscription", "([Ljava/lang/String;)V");
 	static var funcConsume = JNI.createStaticMethod ("org/haxe/extension/iap/InAppPurchase", "consume", "(Ljava/lang/String;Ljava/lang/String;)V");
 	static var funcAcknowledgePurchase = JNI.createStaticMethod ("org/haxe/extension/iap/InAppPurchase", "acknowledgePurchase", "(Ljava/lang/String;Ljava/lang/String;)V");
 	static var funcQueryInventory = JNI.createStaticMethod("org/haxe/extension/iap/InAppPurchase", "queryInventory", "()V");

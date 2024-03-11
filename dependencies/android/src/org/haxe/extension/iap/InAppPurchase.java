@@ -124,7 +124,10 @@ public class InAppPurchase extends Extension {
 
 			if (result.getResponseCode() == BillingResponseCode.OK) {
 			
-				String jsonResp =  "{ \"products\":[ ";
+			//TODO: parsing doesn't work for some reason
+			//fix and uncomment
+			String jsonResp = "{}";
+			/*	String jsonResp =  "{ \"products\":[ ";
 
 				for (ProductDetails sku : purchaseList) {
 					String resSku = sku.toString();
@@ -141,7 +144,7 @@ public class InAppPurchase extends Extension {
 				Log.d("BILLING onQueryProductDetailsFinished: " + jsonResp);
 				
 				//largeLog("BILLING largeLog", jsonResp);
-
+			*/
 				InAppPurchase.complete = true;
 				fireCallback("onRequestProductDataComplete", new Object[] { jsonResp });
 			}
@@ -283,6 +286,39 @@ public class InAppPurchase extends Extension {
 					public void run() {
 						
 						Log.d("BILLING querySkuDetails fire after 5 sec " + InAppPurchase.complete);
+
+						if (!InAppPurchase.complete)
+							fireCallback("onRequestProductDataComplete", new Object[] { "Failure" });
+						
+					}
+				}, 5000);
+			}
+			
+		});
+	}
+
+	public static void querySkuDetailsSubscription(final String[] ids) {
+		Extension.mainActivity.runOnUiThread(new Runnable() 
+		{
+			public void run()
+			{
+				ArrayList<QueryProductDetailsParams.Product> products = new ArrayList<>();
+				for (String productId : ids) {
+					products.add(QueryProductDetailsParams.Product.newBuilder()
+						.setProductId(productId)
+						.setProductType("subs")
+						.build());
+				}
+				
+				InAppPurchase.billingManager.queryProductDetailsAsync(products);
+
+				Log.d("BILLING querySkuDetailsSubscription start");
+
+				new Handler().postDelayed(new Runnable() {
+					@Override
+					public void run() {
+						
+						Log.d("BILLING querySkuDetailsSubscription fire after 5 sec " + InAppPurchase.complete);
 
 						if (!InAppPurchase.complete)
 							fireCallback("onRequestProductDataComplete", new Object[] { "Failure" });

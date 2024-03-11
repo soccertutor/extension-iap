@@ -147,11 +147,24 @@ public class BillingManager implements PurchasesUpdatedListener {
 				Log.d("BILLING  Launching in-app purchase flow.");
 				if (productDetails != null) {
 					
-					List<BillingFlowParams.ProductDetailsParams> productDetailsParamsList = Collections.singletonList(
-					BillingFlowParams.ProductDetailsParams.newBuilder()
-						.setProductDetails(productDetails)
-						.build()
-					);
+					List<BillingFlowParams.ProductDetailsParams> productDetailsParamsList;
+
+					if (productDetails.getProductType() == BillingClient.ProductType.INAPP) {
+						//inapp
+						productDetailsParamsList = Collections.singletonList(
+							BillingFlowParams.ProductDetailsParams.newBuilder()
+							.setProductDetails(productDetails)
+							.build()
+						);
+					} else {
+						//subs
+						productDetailsParamsList = Collections.singletonList(
+							BillingFlowParams.ProductDetailsParams.newBuilder()
+							.setProductDetails(productDetails)
+							.setOfferToken(productDetails.getSubscriptionOfferDetails().get(0).getOfferToken())
+							.build()
+						);
+					}
 
 					BillingFlowParams billingFlowParams = BillingFlowParams.newBuilder()
 							.setProductDetailsParamsList(productDetailsParamsList)

@@ -137,10 +137,19 @@ extern "C" int iap_register_prims() { return 0; }
 
 extern "C" void sendPurchaseEvent(const char* type, const char* data)
 {
+	#ifdef HX_MACOS
+	int base = 0;
+	gc_set_top_of_stack(&base, true);
+	#endif
+
 	value o = alloc_empty_object();
 	alloc_field(o,val_id("type"),safe_alloc_string(type));
 	alloc_field(o,val_id("data"),safe_alloc_string(data));
 	val_call1(purchaseEventHandle->get(), o);
+
+	#ifdef HX_MACOS
+	gc_set_top_of_stack((int*)0, true);
+	#endif
 }
 
 #ifdef BLACKBERRY
@@ -168,6 +177,11 @@ extern "C" void sendPurchaseInventoryData(const char* type, InventoryEntry *inve
 
 extern "C" void sendPurchaseDownloadEvent(const char* type, const char* productID, const char* transactionID, const char* downloadPath, const char* downloadVersion, const char* downloadProgress)
 {
+	#ifdef HX_MACOS
+	int base = 0;
+	gc_set_top_of_stack(&base, true);
+	#endif
+
 	value o = alloc_empty_object();
 	alloc_field(o,val_id("type"),safe_alloc_string(type));
 	alloc_field(o,val_id("productID"),safe_alloc_string(productID));
@@ -176,11 +190,20 @@ extern "C" void sendPurchaseDownloadEvent(const char* type, const char* productI
 	alloc_field(o,val_id("downloadVersion"),safe_alloc_string(downloadVersion));
 	alloc_field(o,val_id("downloadProgress"),safe_alloc_string(downloadProgress));
 	val_call1(purchaseEventHandle->get(), o);
+
+	#ifdef HX_MACOS
+	gc_set_top_of_stack((int*)0, true);
+	#endif
 }
 
 
 extern "C" void sendPurchaseProductDataEvent(const char* type, const char* productID, const char* localizedTitle, const char* localizedDescription, int priceAmountMicros, const char* localizedPrice, const char* priceCurrencyCode)
 {
+	#ifdef HX_MACOS
+	int base = 0;
+	gc_set_top_of_stack(&base, true);
+	#endif
+
 	value o = alloc_empty_object();
 	alloc_field(o,val_id("type"),safe_alloc_string(type));
 	alloc_field(o,val_id("productID"),safe_alloc_string(productID));
@@ -190,11 +213,20 @@ extern "C" void sendPurchaseProductDataEvent(const char* type, const char* produ
 	alloc_field(o,val_id("localizedPrice"),safe_alloc_string(localizedPrice));
 	alloc_field(o,val_id("priceCurrencyCode"),safe_alloc_string(priceCurrencyCode));
 	val_call1(purchaseEventHandle->get(), o);
+	
+	#ifdef HX_MACOS
+	gc_set_top_of_stack((int*)0, true);
+	#endif
 }
 
 
 extern "C" void sendPurchaseFinishEvent(const char* type, const char* productID, const char* transactionID, double transactionDate, const char* receipt)
 {
+	#ifdef HX_MACOS
+	int base = 0;
+	gc_set_top_of_stack(&base, true);
+	#endif
+
 	value o = alloc_empty_object();
 	alloc_field(o,val_id("type"),safe_alloc_string(type));
 	alloc_field(o,val_id("productID"),safe_alloc_string(productID));
@@ -202,4 +234,8 @@ extern "C" void sendPurchaseFinishEvent(const char* type, const char* productID,
 	alloc_field(o,val_id("transactionDate"),alloc_int(static_cast<int>(transactionDate)));
 	alloc_field(o,val_id("receipt"),safe_alloc_string(receipt));
 	val_call1(purchaseEventHandle->get(), o);
+
+	#ifdef HX_MACOS
+	gc_set_top_of_stack((int*)0, true);
+	#endif
 }

@@ -52,6 +52,10 @@
 			<lib name="-lc" />
 		</section>
 
+		<section if="macos">
+			<vflag name="-framework" value="StoreKit" />
+		</section>
+
 	</target>
 
 	<target id="default">

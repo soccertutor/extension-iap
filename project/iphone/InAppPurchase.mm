@@ -228,32 +228,14 @@ void sendPurchaseProductDataEventWrap(const char* type, NSString* productID, NSS
         }*/
 
         @try {
-            NSLog(@"Successful Purchase");
-            NSString* receiptString = [[NSString alloc] initWithString:transaction.payment.productIdentifier];
+			NSLog(@"Successful Purchase");
+			NSString* receiptString = [[NSString alloc] initWithString:transaction.payment.productIdentifier];
 
-            NSURL *receiptURL = [[NSBundle mainBundle] appStoreReceiptURL];
-            if(receiptURL==NULL)
-            {
-                return;
-            }
-            
-            NSData *receipt = [NSData dataWithContentsOfURL:receiptURL];
-            if(receipt==NULL)
-            {
-                return;
-            }
-            
-            NSString *jsonObjectString = [receipt base64EncodedStringWithOptions:0];
-            if(jsonObjectString==NULL)
-            {
-                return;
-            }
+			NSURL *receiptURL = [[NSBundle mainBundle] appStoreReceiptURL];
+			NSData *receipt = [NSData dataWithContentsOfURL:receiptURL];
+			NSString *jsonObjectString = [receipt base64EncodedStringWithOptions:0];
 
-            jsonObjectString=[jsonObjectString stringByReplacingOccurrencesOfString:@"+" withString:@"%2B"];
-            jsonObjectString=[jsonObjectString stringByReplacingOccurrencesOfString:@"\n" withString:@""];
-            jsonObjectString=[jsonObjectString stringByReplacingOccurrencesOfString:@"\r" withString:@""];
-
-            sendPurchaseFinishEvent("success", [transaction.payment.productIdentifier UTF8String], [transaction.transactionIdentifier UTF8String], ([transaction.transactionDate timeIntervalSince1970] * 1000), [jsonObjectString UTF8String]);
+			sendPurchaseFinishEventWrap("success", transaction.payment.productIdentifier, transaction.transactionIdentifier, [transaction.transactionDate timeIntervalSince1970], jsonObjectString);
 		}
 		@catch (NSException *exception) {
 			NSLog(@"%@", exception.reason);

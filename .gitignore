@@ -1,8 +1,8 @@
 .DS_Store
-ndll/*/*.a
-ndll/*/*.so
-ndll/*/*.ndll
-ndll/*/*.hash
+//ndll/*/*.a
+//ndll/*/*.so
+//ndll/*/*.ndll
+//ndll/*/*.hash
 project/obj/*
 *.zip
 *.hxproj

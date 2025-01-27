@@ -269,14 +269,12 @@ void sendPurchaseProductDataEventWrap(const char* type, NSString* productID, NSS
 	}
 }
 
-/*
 - (void)restoreTransaction:(SKPaymentTransaction*)transaction
 {
 	NSLog(@"Restoring Transaction");
-	sendPurchaseEvent("restore", [transaction.payment.productIdentifier UTF8String]);
+	sendPurchaseEvent("productsRestored", [transaction.payment.productIdentifier UTF8String]);
     [self finishTransaction:transaction wasSuccessful:YES];
 }
- */
 
 - (void)failedTransaction:(SKPaymentTransaction*)transaction
 {
@@ -301,25 +299,18 @@ void sendPurchaseProductDataEventWrap(const char* type, NSString* productID, NSS
     {
         switch(transaction.transactionState)
         {
-            case SKPaymentTransactionStatePurchased:
-		NSLog(@"SKPaymentTransactionStatePurchased");
-                [self completeTransaction:transaction];
-		break;
-
+			case SKPaymentTransactionStatePurchased:
+				NSLog(@"SKPaymentTransactionStatePurchased");
+				[self completeTransaction:transaction];
+				break;
+			case SKPaymentTransactionStateFailed:
+				NSLog(@"SKPaymentTransactionStateFailed");
+				[self failedTransaction:transaction];
+				break;
             case SKPaymentTransactionStateRestored:
-		NSLog(@"SKPaymentTransactionStateRestored");
-                [self completeTransaction:transaction];
-                break;
-                
-            case SKPaymentTransactionStateFailed:
-		NSLog(@"SKPaymentTransactionStateFailed");
-                [self failedTransaction:transaction];
-                break;
-                
-            /*case SKPaymentTransactionStateRestored:
-             [self restoreTransaction:transaction];
-             break;
-             */
+				NSLog(@"SKPaymentTransactionStateRestored");
+				[self completeTransaction:transaction];
+				break;
 			 /*case SKPaymentTransactionStatePurchasing:
                 [self purchasingTransaction:transaction];
                 break;

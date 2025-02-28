@@ -56,6 +56,13 @@
 			<vflag name="-framework" value="StoreKit" />
 		</section>
 
+		<section if="macos">
+			<section unless="MACOSX_DEPLOYMENT_TARGET">
+				<setenv name="MACOSX_DEPLOYMENT_TARGET" value="10.12" unless="HXCPP_ARM64"/>
+				<setenv name="MACOSX_DEPLOYMENT_TARGET" value="11.7" if="HXCPP_ARM64" />
+			</section>
+		</section>
+
 	</target>
 
 	<target id="default">

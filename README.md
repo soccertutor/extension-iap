@@ -120,3 +120,11 @@ You can build the binaries using "lime rebuild"
 To return to release builds:
 
     haxelib dev extension-iap
+
+# MacOS builds
+
+Use this commands to rebuild extension for all architectures on macOS:
+
+```bash
+lime rebuild extension-iap mac -64 -clean && lime rebuild extension-iap mac -debug -64 -clean && lime rebuild extension-iap mac -arm64 -clean && lime rebuild extension-iap mac -debug -arm64 -clean
+```

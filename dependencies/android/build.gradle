@@ -1,6 +1,7 @@
 apply plugin: 'com.android.library'
 
 android {
+	namespace "org.haxe.extension.iap.InAppPurchase"
 	sourceSets {
 		main {
 			manifest.srcFile 'AndroidManifest.xml'

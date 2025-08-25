@@ -419,7 +419,7 @@ public class BillingManager implements PurchasesUpdatedListener {
 
 				mBillingClient.queryPurchasesAsync(
 				QueryPurchasesParams.newBuilder()
-					.setProductType("inapp")
+					.setProductType(BillingClient.ProductType.INAPP)
 					.build(),
 
 					new PurchasesResponseListener() {

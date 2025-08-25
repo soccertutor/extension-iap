@@ -12,7 +12,6 @@ import com.android.billingclient.api.BillingClient;
 import com.android.billingclient.api.BillingResult;
 import com.android.billingclient.api.Purchase;
 import com.android.billingclient.api.Purchase.PurchaseState;
-import com.android.billingclient.api.SkuDetails;
 import com.android.billingclient.api.ProductDetails;
 import com.android.billingclient.api.QueryProductDetailsParams;
 
@@ -160,9 +159,9 @@ public class InAppPurchase extends Extension {
 		public void onQueryPurchasesFinished(List<Purchase> purchaseList) {
 			String jsonResp =  "{ \"purchases\":[ ";
 			for (Purchase purchase : purchaseList) {
-				for (String sku : purchase.getSkus()) {
+				for (String productID : purchase.getProducts()) {
 					jsonResp += "{" +
-							"\"key\":\"" + sku +"\", " +
+							"\"key\":\"" + productID +"\", " +
 							"\"value\":" + purchase.getOriginalJson() + "," +
 							"\"purchaseState\":\"" + purchase.getPurchaseState() +"\", " +
 							"\"itemType\":\"\"," +
@@ -273,7 +272,7 @@ public class InAppPurchase extends Extension {
 				for (String productId : ids) {
 					products.add(QueryProductDetailsParams.Product.newBuilder()
 						.setProductId(productId)
-						.setProductType("inapp")
+						.setProductType(BillingClient.ProductType.INAPP)
 						.build());
 				}
 				
@@ -306,7 +305,7 @@ public class InAppPurchase extends Extension {
 				for (String productId : ids) {
 					products.add(QueryProductDetailsParams.Product.newBuilder()
 						.setProductId(productId)
-						.setProductType("subs")
+						.setProductType(BillingClient.ProductType.SUBS)
 						.build());
 				}
 				

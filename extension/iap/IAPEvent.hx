@@ -30,6 +30,8 @@ class IAPEvent extends Event {
 	public static inline var DOWNLOAD_START = "downloadStart";
 	public static inline var DOWNLOAD_PROGRESS = "downloadProgress";
 	public static inline var LOG = "log";
+
+	public static inline var IAP_EXCEPTION = "iapException";
 	
 	public var productID:String;
 	public var productsData:Array<IAProduct>;

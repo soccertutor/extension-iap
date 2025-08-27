@@ -246,7 +246,11 @@ public class InAppPurchase extends Extension {
 			{
 				public void run()
 				{
-					InAppPurchase.callback.call(name, payload);
+					try {
+						InAppPurchase.callback.call(name, payload);
+					} catch (Exception e) {
+						InAppPurchase.callback.call("onIapException", new Object[] { "IAP android error: " + name + " " + payload + "\n" + e.getMessage() + "\n" + e.getStackTrace() } );
+					}
 				}
 			});
 		}
@@ -257,7 +261,11 @@ public class InAppPurchase extends Extension {
 				@Override
 				public void run()
 				{
-					InAppPurchase.callback.call(name, payload);
+					try {
+						InAppPurchase.callback.call(name, payload);
+					} catch (Exception e) {
+						InAppPurchase.callback.call("onIapException", new Object[] { "IAP android error: " + name + " " + payload + "\n" + e.getMessage() + "\n" + e.getStackTrace() } );
+					}
 				}
 			});
 		}

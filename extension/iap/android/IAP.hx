@@ -380,11 +380,15 @@ private class IAPHandler {
 	}
 
 	public function onQueryInventoryComplete(response:String):Void {
-		trace('onQueryInventoryComplete');
-
-		var dynResp:Dynamic = Json.parse(response);
-		IAP.inventory = new Inventory(dynResp);
-		IAP.dispatchEvent (new IAPEvent (IAPEvent.PURCHASE_QUERY_INVENTORY_SUCCESS));
+		trace('onQueryInventoryComplete', response);
+		try {
+			var dynResp:Dynamic = Json.parse(response);
+			IAP.inventory = new Inventory(dynResp);
+			IAP.dispatchEvent (new IAPEvent (IAPEvent.PURCHASE_QUERY_INVENTORY_SUCCESS));
+		} catch (e:Dynamic) {
+			trace("onQueryInventoryComplete parse error", e);
+			onQueryInventoryFailed("");
+		}
 	}
 	
 	public function onQueryInventoryFailed(response:String):Void {
@@ -404,6 +408,14 @@ private class IAPHandler {
 		} else {
 			IAP.dispatchEvent (new IAPEvent (IAPEvent.PURCHASE_INIT_FAILED));
 		}
+	}
+
+	public function onIapException(message:String):Void {
+		trace('onIapException');
+
+		var evt:IAPEvent = new IAPEvent(IAPEvent.IAP_EXCEPTION);
+		evt.message = message;
+		IAP.dispatchEvent(evt);
 	}
 
 	public function log(message:String):Void {

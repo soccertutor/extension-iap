@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import com.android.billingclient.api.BillingClient.SkuType;
 import com.android.billingclient.api.ProductDetailsResponseListener;
 import com.android.billingclient.api.BillingClient.BillingResponseCode;
+import com.android.billingclient.api.BillingClient.OnPurchasesUpdatedSubResponseCode;
 import com.android.billingclient.api.BillingClient.SkuType;
 import com.android.billingclient.api.BillingClient;
 import com.android.billingclient.api.BillingResult;
@@ -92,6 +93,20 @@ public class InAppPurchase extends Extension {
 						fireCallback("onPending", new Object[]{purchase.getOriginalJson(), "", purchase.getSignature()});
 					}
 				}
+			}
+			else if (result.getResponseCode() == BillingResponseCode.ITEM_UNAVAILABLE)
+			{
+				String resultMessage = "Unknown subResponseCode";
+				if (result.getOnPurchasesUpdatedSubResponseCode() == OnPurchasesUpdatedSubResponseCode.USER_INELIGIBLE) {
+					resultMessage = "The user is not eligible for the offer";
+				} else 
+				if (result.getOnPurchasesUpdatedSubResponseCode() == OnPurchasesUpdatedSubResponseCode.PAYMENT_DECLINED_DUE_TO_INSUFFICIENT_FUNDS) {
+					resultMessage = "The user’s payment method does not have sufficient funds";
+				}
+
+				String message = "{\"result\":{\"message\":\"" + resultMessage + "\"}}";
+				Log.d("BILLING onFailedPurchase: " + message);
+				fireCallback("onFailedPurchase", new Object[] { (message) });
 			}
 			else
 			{

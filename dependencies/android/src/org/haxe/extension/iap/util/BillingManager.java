@@ -8,7 +8,6 @@ import com.android.billingclient.api.AcknowledgePurchaseParams;
 import com.android.billingclient.api.AcknowledgePurchaseResponseListener;
 import com.android.billingclient.api.BillingClient;
 import com.android.billingclient.api.BillingClient.FeatureType;
-import com.android.billingclient.api.BillingClient.SkuType;
 import com.android.billingclient.api.BillingClient.BillingResponseCode;
 import com.android.billingclient.api.BillingClientStateListener;
 import com.android.billingclient.api.BillingFlowParams;
@@ -18,10 +17,13 @@ import com.android.billingclient.api.ConsumeResponseListener;
 import com.android.billingclient.api.Purchase;
 import com.android.billingclient.api.PurchasesUpdatedListener;
 import com.android.billingclient.api.ProductDetails;
+import com.android.billingclient.api.UnfetchedProduct;
 import com.android.billingclient.api.QueryProductDetailsParams;
+import com.android.billingclient.api.QueryProductDetailsResult;
 import com.android.billingclient.api.ProductDetailsResponseListener;
 import com.android.billingclient.api.QueryPurchasesParams;
 import com.android.billingclient.api.PurchasesResponseListener;
+import com.android.billingclient.api.PendingPurchasesParams;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -109,8 +111,14 @@ public class BillingManager implements PurchasesUpdatedListener {
 		Log.d("BILLING  Creating Billing client.");
 		mActivity = activity;
 		mBillingUpdatesListener = updatesListener;
+
+		PendingPurchasesParams pendingPurchasesParams = PendingPurchasesParams.newBuilder()
+   			.enableOneTimeProducts()
+    		.build();
+
 		mBillingClient = BillingClient.newBuilder(mActivity)
-							.enablePendingPurchases()
+							.enablePendingPurchases(pendingPurchasesParams)
+							.enableAutoServiceReconnection()
 							.setListener(this)
 							.build();
 	}
@@ -228,7 +236,7 @@ public class BillingManager implements PurchasesUpdatedListener {
 		mSkuRequestAttemts = 0;
 		productDetailsResponseListener = new ProductDetailsResponseListener() {
 			@Override
-			public void onProductDetailsResponse(BillingResult billingResult, List<ProductDetails> productDetailsList) {
+			public void onProductDetailsResponse(BillingResult billingResult, QueryProductDetailsResult productDetailsResult) {
 				
 				int responseCode = billingResult.getResponseCode();
 				if (mSkuRequestAttemts < mSimulateFailuresUntilAttempt) {
@@ -243,11 +251,18 @@ public class BillingManager implements PurchasesUpdatedListener {
 				}
 				else
 				{
+					List<ProductDetails> productDetailsList = productDetailsResult.getProductDetailsList();
+					List<UnfetchedProduct> unfetchedProductList = productDetailsResult.getUnfetchedProductList();
+
 					mBillingUpdatesListener.onQueryProductDetailsFinished(productDetailsList, billingResult);
 					if ((responseCode == BillingResponseCode.OK) && (productDetailsList != null)) {
 						for (ProductDetails productDetails : productDetailsList) {
-
 							mSkuDetailsMap.put(productDetails.getProductId(), productDetails);
+						}
+					}
+					if (unfetchedProductList != null) {
+						for (UnfetchedProduct unfetchedProduct : unfetchedProductList) {
+							Log.d("BILLING  onQueryProductDetailsFinished UNFETCHED product:" + unfetchedProduct.getProductId() + " " + unfetchedProduct.getStatusCode());
 						}
 					}
 				}
@@ -500,6 +515,8 @@ public class BillingManager implements PurchasesUpdatedListener {
 			@Override
 			public void onBillingServiceDisconnected() {
 				Log.d("BILLING OnBillingServiceDisconnected");
+				Log.d("BILLING OnBillingServiceDisconnected connection is now handled by enableAutoServiceReconnection()");
+				//Comment or not comment next line ? This is a question...
 				mIsServiceConnected = false;
 			}
 		};
